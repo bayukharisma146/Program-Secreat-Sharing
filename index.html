@@ -1,0 +1,1065 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistem Berbagi Rahasia Shamir</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        .floating-shapes {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: -1;
+        }
+
+        .shape {
+            position: absolute;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.1);
+            animation: float 6s ease-in-out infinite;
+        }
+
+        .shape:nth-child(1) {
+            width: 80px;
+            height: 80px;
+            top: 20%;
+            left: 10%;
+            animation-delay: 0s;
+        }
+
+        .shape:nth-child(2) {
+            width: 120px;
+            height: 120px;
+            top: 60%;
+            right: 20%;
+            animation-delay: 2s;
+        }
+
+        .shape:nth-child(3) {
+            width: 60px;
+            height: 60px;
+            bottom: 30%;
+            left: 30%;
+            animation-delay: 4s;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0px) rotate(0deg); }
+            33% { transform: translateY(-20px) rotate(120deg); }
+            66% { transform: translateY(10px) rotate(240deg); }
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+            position: relative;
+        }
+
+        .header::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 300px;
+            height: 300px;
+            background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+            border-radius: 50%;
+            z-index: -1;
+        }
+
+        .header h1 {
+            font-size: 3.5rem;
+            font-weight: 700;
+            color: white;
+            text-shadow: 2px 2px 20px rgba(0,0,0,0.3);
+            margin-bottom: 15px;
+            background: linear-gradient(45deg, #fff, #f0f8ff, #e6f3ff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .header p {
+            font-size: 1.3rem;
+            color: rgba(255, 255, 255, 0.9);
+            font-weight: 300;
+        }
+
+        .main-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 40px;
+        }
+
+        .card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            border-radius: 25px;
+            padding: 35px;
+            box-shadow: 0 25px 50px rgba(0,0,0,0.15);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            transition: all 0.4s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .card::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: linear-gradient(45deg, transparent, rgba(255,255,255,0.1), transparent);
+            transform: rotate(45deg);
+            transition: all 0.6s ease;
+            opacity: 0;
+        }
+
+        .card:hover::before {
+            opacity: 1;
+            animation: shimmer 1.5s ease-in-out;
+        }
+
+        @keyframes shimmer {
+            0% { transform: translateX(-100%) translateY(-100%) rotate(45deg); }
+            100% { transform: translateX(100%) translateY(100%) rotate(45deg); }
+        }
+
+        .card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 35px 70px rgba(0,0,0,0.2);
+        }
+
+        .card-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 25px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #e8f4fd;
+        }
+
+        .card-icon {
+            font-size: 2.5rem;
+            margin-right: 15px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .card-title {
+            font-size: 1.6rem;
+            font-weight: 600;
+            color: #2c3e50;
+        }
+
+        .input-group {
+            margin-bottom: 25px;
+            position: relative;
+        }
+
+        .input-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: #34495e;
+            font-size: 0.95rem;
+        }
+
+        .input-field {
+            width: 100%;
+            padding: 15px 20px;
+            border: 2px solid #e8f4fd;
+            border-radius: 15px;
+            font-size: 16px;
+            transition: all 0.3s ease;
+            background: rgba(255, 255, 255, 0.8);
+            position: relative;
+        }
+
+        .input-field:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 25px rgba(102, 126, 234, 0.2);
+            background: rgba(255, 255, 255, 1);
+        }
+
+        .number-inputs {
+            display: flex;
+            gap: 20px;
+        }
+
+        .number-inputs .input-group {
+            flex: 1;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 18px 35px;
+            border-radius: 50px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.2);
+            transition: all 0.5s ease;
+            transform: translate(-50%, -50%);
+        }
+
+        .btn:hover::before {
+            width: 300px;
+            height: 300px;
+        }
+
+        .btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 15px 35px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn:active {
+            transform: translateY(-1px);
+        }
+
+        .btn:disabled {
+            background: linear-gradient(135deg, #bdc3c7, #95a5a6);
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .shares-display {
+            background: linear-gradient(135deg, #f8fcff 0%, #e8f4fd 100%);
+            border-radius: 20px;
+            padding: 25px;
+            margin-top: 25px;
+            border: 1px solid #e8f4fd;
+        }
+
+        .share-item {
+            background: white;
+            padding: 20px;
+            margin-bottom: 15px;
+            border-radius: 15px;
+            border: 1px solid #e8f4fd;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+            transition: all 0.3s ease;
+            position: relative;
+            word-break: break-all;
+        }
+
+        .share-item:hover {
+            transform: translateX(5px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+        }
+
+        .share-checkbox {
+            margin-right: 15px;
+            transform: scale(1.3);
+            accent-color: #667eea;
+        }
+
+        .checkbox-share {
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .checkbox-share:hover {
+            background: rgba(102, 126, 234, 0.05);
+        }
+
+        .checkbox-share input:checked + label {
+            color: #667eea;
+            font-weight: 600;
+        }
+
+        .results-section {
+            grid-column: 1 / -1;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            border-radius: 25px;
+            padding: 35px;
+            box-shadow: 0 25px 50px rgba(0,0,0,0.15);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .results-tabs {
+            display: flex;
+            margin-bottom: 30px;
+            background: #f8fcff;
+            border-radius: 15px;
+            padding: 5px;
+        }
+
+        .tab-btn {
+            flex: 1;
+            padding: 15px 25px;
+            border: none;
+            background: transparent;
+            border-radius: 12px;
+            cursor: pointer;
+            font-weight: 500;
+            color: #7f8c8d;
+            transition: all 0.3s ease;
+        }
+
+        .tab-btn.active {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(102, 126, 234, 0.3);
+        }
+
+        .results-table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+
+        .results-table th {
+            background: linear-gradient(135deg, #2c3e50, #34495e);
+            color: white;
+            padding: 20px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            text-align: left;
+        }
+
+        .results-table td {
+            padding: 18px 20px;
+            border-bottom: 1px solid #ecf0f1;
+            transition: all 0.3s ease;
+        }
+        
+        .results-table td code {
+            word-break: break-all;
+        }
+
+        .results-table tr:hover td {
+            background: #f8fcff;
+        }
+
+        .status-badge {
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 500;
+            white-space: nowrap;
+        }
+
+        .status-active {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .status-used {
+            background: #d1ecf1;
+            color: #0c5460;
+        }
+
+        .status-unused {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .reconstruction-result {
+            background: linear-gradient(135deg, #f8fcff 0%, #e8f4fd 100%);
+            border-radius: 20px;
+            padding: 30px;
+            margin-top: 25px;
+            border: 1px solid #e8f4fd;
+        }
+
+        .result-success {
+            background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%);
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+
+        .result-error {
+            background: linear-gradient(135deg, #f8d7da 0%, #f5c6cb 100%);
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+
+        .info-panel {
+            background: linear-gradient(135deg, #e8f4fd 0%, #d1ecf1 100%);
+            border-radius: 20px;
+            padding: 25px;
+            margin-top: 25px;
+            border: 1px solid #bee5eb;
+        }
+
+        .analysis-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-top: 30px;
+        }
+
+        .analysis-card {
+            background: white;
+            border-radius: 20px;
+            padding: 25px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+        }
+
+        .analysis-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.15);
+        }
+
+        .analysis-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .analysis-icon {
+            font-size: 2rem;
+            margin-right: 15px;
+        }
+
+        .pros-icon {
+            color: #27ae60;
+        }
+
+        .cons-icon {
+            color: #e74c3c;
+        }
+
+        .feature-list {
+            list-style: none;
+        }
+
+        .feature-list li {
+            padding: 8px 0;
+            padding-left: 25px;
+            position: relative;
+        }
+
+        .feature-list li::before {
+            content: '✓';
+            position: absolute;
+            left: 0;
+            color: #27ae60;
+            font-weight: bold;
+        }
+
+        .limitation-list li::before {
+            content: '⚠';
+            color: #f39c12;
+        }
+
+        @media (max-width: 1024px) {
+            .main-grid {
+                grid-template-columns: 1fr;
+                gap: 25px;
+            }
+            
+            .analysis-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .header h1 {
+                font-size: 2.5rem;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 15px;
+            }
+            
+            .number-inputs {
+                flex-direction: column;
+                gap: 15px;
+            }
+            
+            .card {
+                padding: 25px;
+            }
+            
+            .header h1 {
+                font-size: 2rem;
+            }
+        }
+
+        .loading-spinner {
+            display: none;
+            width: 20px;
+            height: 20px;
+            border: 2px solid #ffffff;
+            border-top: 2px solid transparent;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-right: 10px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .btn.loading .loading-spinner {
+            display: inline-block;
+        }
+    </style>
+</head>
+<body>
+    <div class="floating-shapes">
+        <div class="shape"></div>
+        <div class="shape"></div>
+        <div class="shape"></div>
+    </div>
+
+    <div class="container">
+        <div class="header">
+            <h1>🔐 Berbagi Rahasia Shamir</h1>
+            <p>Sistem Distribusi Rahasia Kriptografi Tingkat Lanjut</p>
+        </div>
+
+        <div class="main-grid">
+            <!-- Kartu Pembuatan Rahasia -->
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-icon">🔄</div>
+                    <div class="card-title">Pembuatan Rahasia</div>
+                </div>
+                
+                <div class="input-group">
+                    <label for="secret">🔑 Masukkan Rahasia Anda:</label>
+                    <textarea id="secret" class="input-field" rows="3" 
+                              placeholder="Masukkan rahasia yang ingin Anda distribusikan dengan aman...">Kunci Rahasia Database: ABC123XYZ</textarea>
+                </div>
+                
+                <div class="number-inputs">
+                    <div class="input-group">
+                        <label for="n">📊 Total Bagian (n):</label>
+                        <input type="number" id="n" class="input-field" value="5" min="2" max="15">
+                    </div>
+                    <div class="input-group">
+                        <label for="k">🎯 Ambang Batas (k):</label>
+                        <input type="number" id="k" class="input-field" value="3" min="2" max="15">
+                    </div>
+                </div>
+                
+                <button class="btn" onclick="generateShares()" id="generateBtn">
+                    <span class="loading-spinner"></span>
+                    Buat Bagian Rahasia
+                </button>
+                
+                <div id="sharesResult"></div>
+            </div>
+
+            <!-- Kartu Rekonstruksi Rahasia -->
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-icon">🔧</div>
+                    <div class="card-title">Rekonstruksi Rahasia</div>
+                </div>
+                
+                <div class="info-panel">
+                    <strong>📋 Instruksi:</strong> Pilih minimal <span id="minShares">3</span> bagian untuk merekonstruksi rahasia asli.
+                </div>
+                
+                <div id="reconstructionShares"></div>
+                
+                <button class="btn" onclick="reconstructSecret()" id="reconstructBtn" disabled>
+                    <span class="loading-spinner"></span>
+                    Rekonstruksi Rahasia
+                </button>
+                
+                <div id="reconstructionResult"></div>
+            </div>
+        </div>
+
+        <!-- Bagian Hasil -->
+        <div class="results-section">
+            <div class="card-header">
+                <div class="card-icon">📊</div>
+                <div class="card-title">Analisis & Hasil Sistem</div>
+            </div>
+
+            <div class="results-tabs">
+                <button class="tab-btn active" onclick="switchTab('results')" id="resultsTab">📈 Hasil Uji</button>
+                <button class="tab-btn" onclick="switchTab('analysis')" id="analysisTab">🔍 Analisis</button>
+            </div>
+
+            <div id="resultsContent">
+                <table class="results-table" id="resultsTable">
+                    <thead>
+                        <tr>
+                            <th>ID Bagian</th>
+                            <th>Koordinat (x, y)</th>
+                            <th>Status</th>
+                            <th>Penggunaan</th>
+                            <th>Waktu</th>
+                        </tr>
+                    </thead>
+                    <tbody id="resultsTableBody">
+                    </tbody>
+                </table>
+            </div>
+
+            <div id="analysisContent" style="display: none;">
+                <div class="analysis-grid">
+                    <div class="analysis-card">
+                        <div class="analysis-header">
+                            <div class="analysis-icon pros-icon">✅</div>
+                            <h3>Keunggulan & Fitur</h3>
+                        </div>
+                        <ul class="feature-list">
+                            <li><strong>Keamanan Terdistribusi:</strong> Rahasia tidak pernah disimpan utuh</li>
+                            <li><strong>Toleransi Kesalahan:</strong> Sistem tetap bekerja meski beberapa bagian hilang</li>
+                            <li><strong>Kontrol Ambang Batas:</strong> Kontrol akses presisi dengan jumlah bagian minimum</li>
+                            <li><strong>Bukti Matematis:</strong> Berdasarkan interpolasi polinomial</li>
+                            <li><strong>Keamanan Sempurna:</strong> Keamanan secara teori informasi</li>
+                            <li><strong>Skalabel:</strong> Dapat digunakan dengan jumlah peserta berapa pun</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="analysis-card">
+                        <div class="analysis-header">
+                            <div class="analysis-icon cons-icon">⚠️</div>
+                            <h3>Batasan & Tantangan</h3>
+                        </div>
+                        <ul class="feature-list limitation-list">
+                            <li><strong>Beban Penyimpanan:</strong> Total penyimpanan melebihi ukuran rahasia asli</li>
+                            <li><strong>Manajemen Bagian:</strong> Distribusi dan penyimpanan kunci yang kompleks</li>
+                            <li><strong>Biaya Komputasi:</strong> Rekonstruksi memerlukan perhitungan intensif</li>
+                            <li><strong>Sinkronisasi:</strong> Perlu mengoordinasikan beberapa pihak</li>
+                            <li><strong>Tanpa Otentikasi:</strong> Skema dasar tidak memverifikasi integritas bagian</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- LOGIKA KRIPTOGRAFI INTI (BARU) ---
+         const PRIME = 104729; // Bilangan prima lebih besar dari 255 (max ASCII)
+
+    function stringToCharCodes(str) {
+        return [...str].map((char) => char.charCodeAt(0));
+    } // Mengubah string menjadi array kode ASCII
+
+    function charCodesToString(codes) {
+        return codes.map((code) => String.fromCharCode(code)).join("");
+    }
+
+    function evalPolynomial(coeffs, x) {
+        let result = 0;
+        for (let i = coeffs.length - 1; i >= 0; i--) {
+            result = (result * x + coeffs[i]) % PRIME;
+        }
+        return result;
+    }// Mengevaluasi polinomial pada titik x
+
+    function modInverse(a, m) {
+        a = ((a % m) + m) % m;
+        for (let x = 1; x < m; x++) {
+            if ((a * x) % m === 1) return x;
+        }
+        throw new Error(`Invers modular untuk ${a} mod ${m} tidak ditemukan.`);
+    }// digunakan dalam interpolasi Lagrange, menggantikan pembagian biasa dengan perkalian menggunakan invers modular.
+
+    function lagrangeInterpolation(points) {
+        let secret = 0;
+        for (let i = 0; i < points.length; i++) {
+            const [xi, yi] = points[i];
+            let num = 1;
+            let den = 1;
+
+            for (let j = 0; j < points.length; j++) {
+                if (j !== i) {
+                    const [xj] = points[j];
+                    num = (num * -xj + PRIME) % PRIME;
+                    den = (den * (xi - xj + PRIME)) % PRIME;
+                }
+            }
+
+            const inv = modInverse(den, PRIME);
+            const term = (yi * num * inv) % PRIME;
+            secret = (secret + term) % PRIME;
+        }
+        return (secret + PRIME) % PRIME;
+    }// Interpolasi Lagrange untuk merekonstruksi rahasia dari nilai f(0), dari minimal k buah share xy
+
+    function generateShares() {
+        const secret = parseInt(document.getElementById("secretInput").value);
+        const n = parseInt(document.getElementById("nInput").value);
+        const k = parseInt(document.getElementById("kInput").value);
+        const sharesList = document.getElementById("sharesList");
+        sharesList.innerHTML = "";
+
+        if (isNaN(secret) || isNaN(n) || isNaN(k)) {
+            alert("Masukkan semua nilai dengan benar.");
+            return;
+        }
+
+        if (secret >= PRIME) {
+            alert(`Secret harus kurang dari bilangan prima ${PRIME}`);
+            return;
+        }
+
+        if (k > n) {
+            alert("Nilai k tidak boleh lebih besar dari n.");
+            return;
+        }
+
+        const coefficients = [secret];
+        for (let i = 1; i < k; i++) {
+            coefficients.push(Math.floor(Math.random() * PRIME));
+        }
+
+        const shares = [];
+        for (let x = 1; x <= n; x++) {
+            let y = evalPolynomial(coefficients, x);
+            shares.push([x, y]);
+            const li = document.createElement("li");
+            li.textContent = `Share ${x}: (${x}, ${y})`;
+            sharesList.appendChild(li);
+        }
+    }
+
+    function reconstruct() {
+        const input = document.getElementById("reconstructInput").value.trim();
+        const lines = input.split("\n");
+        const points = lines.map(line => {
+            const [x, y] = line.split(",").map(Number);
+            return [x, y];
+        });
+
+        try {
+            const secret = lagrangeInterpolation(points);
+            document.getElementById("reconstructedSecret").textContent = `Secret hasil rekonstruksi: ${secret}`;
+        } catch (err) {
+            document.getElementById("reconstructedSecret").textContent = `Gagal merekonstruksi: ${err.message}`;
+        }
+    }
+
+        // --- LOGIKA APLIKASI DAN UI ---
+
+        async function generateShares() {
+            const btn = document.getElementById('generateBtn');
+            const secret = document.getElementById('secret').value;
+            const n = parseInt(document.getElementById('n').value);
+            const k = parseInt(document.getElementById('k').value);
+            
+            if (!secret.trim()) {
+                showNotification('Harap masukkan rahasia terlebih dahulu!', 'error');
+                return;
+            }
+            if (k > n) {
+                showNotification('Ambang batas (k) tidak boleh lebih besar dari total bagian (n)!', 'error');
+                return;
+            }
+
+            const secretCodes = stringToCharCodes(secret);
+            if (secretCodes.some(code => code >= PRIME)) {
+                showNotification(`Rahasia mengandung karakter dengan kode >= ${PRIME}. Harap gunakan ASCII dasar.`, 'error');
+                return;
+            }
+            
+            btn.classList.add('loading');
+            btn.disabled = true;
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            
+            originalSecret = secret;
+            document.getElementById('minShares').textContent = k;
+            
+            const sharesData = Array.from({ length: n }, () => []);
+            for (let code of secretCodes) {
+                const coeffs = [code];
+                for (let i = 1; i < k; i++) {
+                    const randomCoeff = window.crypto && window.crypto.getRandomValues 
+                        ? (window.crypto.getRandomValues(new Uint32Array(1))[0] % PRIME)
+                        : Math.floor(Math.random() * PRIME);
+                    coeffs.push(randomCoeff);
+                }
+                for (let i = 0; i < n; i++) {
+                    const x = i + 1;
+                    sharesData[i].push(evalPolynomial(coeffs, x));
+                }
+            }
+            currentShares = sharesData.map((y_values, i) => ({ x: i + 1, y_values: y_values }));
+            
+            btn.classList.remove('loading');
+            btn.disabled = false;
+            
+            displayShares();
+            updateResultsTable();
+            showNotification('Bagian rahasia berhasil dibuat!', 'success');
+        }
+
+        function displayShares() {
+            const sharesHtml = `
+                <div class="shares-display">
+                    <h3>🔑 Bagian yang Dibuat:</h3>
+                    ${currentShares.map((share, index) => `
+                        <div class="share-item" style="animation-delay: ${index * 0.1}s;">
+                            <strong>Bagian ${share.x}:</strong> <code>(${share.x}, ${share.y_values.join(':')})</code>
+                        </div>
+                    `).join('')}
+                    <div class="info-panel">
+                        <p><strong>📊 Ringkasan:</strong> ${currentShares.length} bagian dibuat. Minimal ${document.getElementById('k').value} dibutuhkan.</p>
+                    </div>
+                </div>
+            `;
+            document.getElementById('sharesResult').innerHTML = sharesHtml;
+            displayReconstructionShares();
+        }
+
+        function displayReconstructionShares() {
+            const reconstructionHtml = `
+                <div class="shares-display">
+                    <h3>📋 Pilih Bagian untuk Rekonstruksi:</h3>
+                    ${currentShares.map((share, index) => `
+                        <div class="share-item">
+                            <div class="checkbox-share">
+                                <input type="checkbox" class="share-checkbox" value="${index}" 
+                                    id="share_${index}" onchange="updateReconstructButton()">
+                                <label for="share_${index}">
+                                    <strong>Bagian ${share.x}:</strong> <code>(${share.x}, ${share.y_values.join(':')})</code>
+                                </label>
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+            document.getElementById('reconstructionShares').innerHTML = reconstructionHtml;
+        }
+
+        function updateReconstructButton() {
+            const checkboxes = document.querySelectorAll('.share-checkbox:checked');
+            const k = parseInt(document.getElementById('k').value);
+            const reconstructBtn = document.getElementById('reconstructBtn');
+            
+            if (checkboxes.length >= k) {
+                reconstructBtn.disabled = false;
+                reconstructBtn.innerHTML = `<span class="loading-spinner"></span> Rekonstruksi dengan ${checkboxes.length} Bagian`;
+            } else {
+                reconstructBtn.disabled = true;
+                reconstructBtn.innerHTML = `<span class="loading-spinner"></span> Pilih minimal ${k} bagian`;
+            }
+        }
+
+        async function reconstructSecret() {
+            const btn = document.getElementById('reconstructBtn');
+            btn.classList.add('loading');
+            btn.disabled = true;
+            await new Promise(resolve => setTimeout(resolve, 1500));
+            
+            const checkboxes = document.querySelectorAll('.share-checkbox:checked');
+            const selectedShares = [];
+            checkboxes.forEach(checkbox => {
+                const index = parseInt(checkbox.value);
+                selectedShares.push(currentShares[index]);
+            });
+            
+            try {
+                const secretCodes = [];
+                const numChars = selectedShares[0].y_values.length;
+                for (let i = 0; i < numChars; i++) {
+                    const pointsForChar = selectedShares.map(share => [share.x, share.y_values[i]]);
+                    secretCodes.push(lagrangeInterpolation(pointsForChar));
+                }
+                const reconstructedText = charCodesToString(secretCodes);
+                const success = reconstructedText === originalSecret;
+                const timestamp = new Date().toLocaleString('id-ID');
+                
+                const resultHtml = `
+                    <div class="reconstruction-result ${success ? 'result-success' : 'result-error'}">
+                        <h3>🎯 Hasil Rekonstruksi:</h3>
+                        <div style="margin: 20px 0;">
+                            <p><strong>Status:</strong> ${success ? '✅ SUKSES' : '❌ GAGAL'}</p>
+                            <p><strong>Rahasia Asli:</strong> <code>"${originalSecret}"</code></p>
+                            <p><strong>Rahasia Rekonstruksi:</strong> <code>"${reconstructedText}"</code></p>
+                            <p><strong>Bagian yang Digunakan:</strong> ${selectedShares.length} dari ${currentShares.length}</p>
+                            <p><strong>Waktu:</strong> ${timestamp}</p>
+                        </div>
+                    </div>
+                `;
+                document.getElementById('reconstructionResult').innerHTML = resultHtml;
+                
+                updateResultsTableWithReconstruction(selectedShares, success);
+                showNotification(success ? 'Rahasia berhasil direkonstruksi!' : 'Rekonstruksi gagal!', success ? 'success' : 'error');
+                
+            } catch (error) {
+                document.getElementById('reconstructionResult').innerHTML = `
+                    <div class="reconstruction-result result-error">
+                        <h3>❌ Galat Rekonstruksi</h3>
+                        <p><strong>Galat:</strong> ${error.message}</p>
+                    </div>
+                `;
+                showNotification('Terjadi galat saat rekonstruksi!', 'error');
+            } finally {
+                btn.classList.remove('loading');
+                updateReconstructButton();
+            }
+        }
+
+        function updateResultsTable() {
+            const tbody = document.getElementById('resultsTableBody');
+            const timestamp = new Date().toLocaleString('id-ID');
+            
+            tbody.innerHTML = currentShares.map((share, index) => `
+                <tr style="animation: fadeInUp 0.6s ease ${index * 0.1}s both;">
+                    <td><strong>Bagian ${share.x}</strong></td>
+                    <td><code>(${share.x}, ${share.y_values.join(':')})</code></td>
+                    <td><span class="status-badge status-active">✅ Aktif</span></td>
+                    <td><span class="status-badge status-unused">⏳ Menunggu Dipilih</span></td>
+                    <td>${timestamp}</td>
+                </tr>
+            `).join('');
+        }
+
+        function updateResultsTableWithReconstruction(selectedShares, success) {
+            const tbody = document.getElementById('resultsTableBody');
+            const selectedIds = selectedShares.map(share => share.x);
+            const timestamp = new Date().toLocaleString('id-ID');
+            
+            tbody.innerHTML = currentShares.map((share, index) => {
+                const isUsed = selectedIds.includes(share.x);
+                return `
+                    <tr style="animation: fadeInUp 0.6s ease ${index * 0.1}s both; ${isUsed ? 'background: rgba(102, 126, 234, 0.05);' : ''}">
+                        <td><strong>Bagian ${share.x}</strong></td>
+                        <td><code>(${share.x}, ${share.y_values.join(':')})</code></td>
+                        <td><span class="status-badge status-active">✅ Aktif</span></td>
+                        <td>
+                            ${isUsed ? 
+                                `<span class="status-badge status-used">✅ Digunakan ${success ? '(Sukses)' : '(Gagal)'}</span>` : 
+                                '<span class="status-badge status-unused">➖ Tidak Digunakan</span>'
+                            }
+                        </td>
+                        <td>${timestamp}</td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        function switchTab(tabName) {
+            const resultsTab = document.getElementById('resultsTab');
+            const analysisTab = document.getElementById('analysisTab');
+            const resultsContent = document.getElementById('resultsContent');
+            const analysisContent = document.getElementById('analysisContent');
+            
+            if (tabName === 'results') {
+                resultsTab.classList.add('active');
+                analysisTab.classList.remove('active');
+                resultsContent.style.display = 'block';
+                analysisContent.style.display = 'none';
+            } else {
+                resultsTab.classList.remove('active');
+                analysisTab.classList.add('active');
+                resultsContent.style.display = 'none';
+                analysisContent.style.display = 'block';
+            }
+        }
+
+        function showNotification(message, type) {
+            const notification = document.createElement('div');
+            notification.style.cssText = `
+                position: fixed; top: 20px; right: 20px; padding: 15px 25px; border-radius: 15px;
+                color: white; font-weight: 500; z-index: 10000; transform: translateX(400px);
+                transition: all 0.3s ease; max-width: 350px; box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            `;
+            
+            if (type === 'success') notification.style.background = 'linear-gradient(135deg, #27ae60, #2ecc71)';
+            else if (type === 'error') notification.style.background = 'linear-gradient(135deg, #e74c3c, #c0392b)';
+            else notification.style.background = 'linear-gradient(135deg, #3498db, #2980b9)';
+            
+            notification.innerHTML = `<div style="display: flex; align-items: center;">
+                <span style="font-size: 1.2em; margin-right: 10px;">${type === 'success' ? '✅' : type === 'error' ? '❌' : 'ℹ️'}</span>
+                ${message}</div>`;
+            
+            document.body.appendChild(notification);
+            setTimeout(() => { notification.style.transform = 'translateX(0)'; }, 100);
+            setTimeout(() => {
+                notification.style.transform = 'translateX(400px)';
+                setTimeout(() => { document.body.removeChild(notification); }, 300);
+            }, 4000);
+        }
+
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes fadeInUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
+            .used-share { background: linear-gradient(90deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%) !important; }
+            .share-item { animation: fadeInUp 0.6s ease both; }`;
+        document.head.appendChild(style);
+
+        window.addEventListener('load', function() {
+            setTimeout(() => {
+                showNotification('Selamat datang! Demo bagian akan dibuat secara otomatis.', 'info');
+                setTimeout(() => { generateShares(); }, 2000);
+            }, 1000);
+        });
+
+        document.getElementById('n').addEventListener('input', function() {
+            const n = parseInt(this.value);
+            const k = parseInt(document.getElementById('k').value);
+            if (k > n) document.getElementById('k').value = n;
+        });
+
+        document.getElementById('k').addEventListener('input', function() {
+            const k = parseInt(this.value);
+            const n = parseInt(document.getElementById('n').value);
+            if (k > n) this.value = n;
+        });
+
+    </script>
+</body>
+</html>
